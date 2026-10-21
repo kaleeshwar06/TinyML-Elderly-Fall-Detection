@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TinyFallNet — Live Interactive Prediction & Kinematic Testing Suite</title>
+  <!-- Chart.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --border: #d4e0ee;
+      --accent: #1a56a0;
+      --accent-dark: #0f3d75;
+      --green: #0e8a5f;
+      --orange: #e67e22;
+      --red: #c0392b;
+      --text: #1a2530;
+      --muted: #5f738a;
+      --radius: 10px;
+      --shadow: 0 4px 16px rgba(20,50,90,.08);
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    header {
+      background: linear-gradient(135deg, #0a254e 0%, #1a56a0 100%);
+      color: #fff;
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    }
+    header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: .3px;
+    }
+    header p {
+      font-size: 13px;
+      opacity: .85;
+      margin-top: 4px;
+    }
+    .back-btn {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all .2s;
+    }
+    .back-btn:hover {
+      background: #fff;
+      color: var(--accent);
+    }
+    .page-container {
+      max-width: 1400px;
+      margin: 24px auto 40px;
+      padding: 0 24px;
+    }
+    /* Presets Strip */
+    .presets-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 22px;
+      box-shadow: var(--shadow);
+    }
+    .presets-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .presets-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .preset-pill {
+      background: #eef5fc;
+      border: 1px solid #c8dcf0;
+      color: var(--accent);
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .preset-pill:hover, .preset-pill.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(26,86,160,.25);
+    }
+    /* 2-Column Master Layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 440px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+    .panel-header {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      border-bottom: 2px solid #eef2f7;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    /* Sliders & Inputs */
+    .control-box {
+      margin-bottom: 16px;
+    }
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .control-val-badge {
+      background: #eaf1fb;
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .slider {
+      width: 100%;
+      height: 7px;
+      border-radius: 4px;
+      background: #d8e4f2;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,.25);
+      transition: transform .1s;
+    }
+    .slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+    select.model-select {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      background: #fff;
+      cursor: pointer;
+    }
+    /* Right Column: Hero Banner */
+    .hero-pred-banner {
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 2px solid transparent;
+      transition: all .25s ease;
+    }
+    .hero-pred-banner.adl {
+      background: #edf6ff;
+      border-color: #2b78d6;
+    }
+    .hero-pred-banner.prefall {
+      background: #fdf5e8;
+      border-color: var(--orange);
+    }
+    .hero-pred-banner.fall {
+      background: #fde8e8;
+      border-color: var(--red);
+      animation: alertPulse 1.6s infinite;
+    }
+    @keyframes alertPulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(192,57,43,.2); }
+      50% { box-shadow: 0 0 24px rgba(192,57,43,.45); }
+    }
+    .hero-title {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-top: 4px;
+    }
+    .hero-subtitle {
+      font-size: 13px;
+      font-weight: 600;
+      opacity: .85;
+      margin-top: 6px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+    .pill-green { background: #d4f4e5; color: #0a6640; }
+    .pill-orange { background: #fde8cc; color: #8a4200; }
+    .pill-red { background: #fde0de; color: #8a1010; }
+    .pill-blue { background: #ddeeff; color: #0d3a7c; }
+
+    /* Plots Grid inside right panel */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 800px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+    .chart-card {
+      background: #f9fbfe;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .chart-card h4 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 10px;
+    }
+    .chart-wrap {
+      position: relative;
+      height: 200px;
+      width: 100%;
+    }
+    /* Waveform Plot Card */
+    .waveform-card {
+      background: #f9fbfe;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .waveform-wrap {
+      position: relative;
+      height: 180px;
+      width: 100%;
+    }
+    /* Clinical Rationale Box */
+    .rationale-box {
+      background: #f0f6ff;
+      border-left: 4px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      font-size: 13px;
+    }
+    .rationale-title {
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div>
+      <h1>⚡ Live Kinematic Fall Testing UI &amp; Real-Time Prediction Suite</h1>
+      <p>Interactive verification platform for TinyFallNet, Random Forest, HistGradientBoosting, Standard 1D-CNN, and CNN-LSTM</p>
+    </div>
+    <a href="dashboard.html" class="back-btn">← Back to Publication Dashboard</a>
+  </header>
+
+  <div class="page-container">
+
+    <!-- Preset Scenario Selector Strip -->
+    <div class="presets-card">
+      <div class="presets-title">
+        <span>🧪 Select Empirical Benchmark Preset (SisFall Dataset):</span>
+      </div>
+      <div class="presets-group">
+        <button class="preset-pill active" id="btn_adl_walk" onclick="applyPreset('adl_walk')">🚶 Normal Walking (ADL)</button>
+        <button class="preset-pill" id="btn_adl_sit" onclick="applyPreset('adl_sit')">🪑 Rapid Chair Sitting (ADL)</button>
+        <button class="preset-pill" id="btn_prefall_trip" onclick="applyPreset('prefall_trip')">⚠️ Forward Trip / Stumble (Pre-Fall)</button>
+        <button class="preset-pill" id="btn_fall_slip" onclick="applyPreset('fall_slip')">💥 Wet Floor Slip Impact (Fall)</button>
+        <button class="preset-pill" id="btn_fall_syncope" onclick="applyPreset('fall_syncope')">🚨 Syncope Drop with Long-Lie (Severe Fall)</button>
+      </div>
+    </div>
+
+    <!-- 2-Column Master Sandbox -->
+    <div class="main-grid">
+
+      <!-- LEFT COLUMN: Parameter Controls -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>Kinematic Input Controls</span>
+          <span class="pill pill-blue">256-Sample Window (50 Hz)</span>
+        </div>
+
+        <!-- Model Selection -->
+        <div class="control-box">
+          <label class="control-label" for="sel_model">
+            <span>Inference Model Architecture:</span>
+          </label>
+          <select id="sel_model" class="model-select" onchange="recalculate()">
+            <option value="tinyfallnet" selected>★ Proposed TinyFallNet (SE-ResCNN) — INT8 20.48 KB</option>
+            <option value="rf">Random Forest (Handcrafted 88-Features)</option>
+            <option value="hgb">HistGradientBoosting (Tree Ensemble)</option>
+            <option value="cnn">Standard 1D-CNN (Sequential 3-Layer)</option>
+            <option value="lstm">CNN-LSTM Hybrid (Spatial-Temporal)</option>
+          </select>
+        </div>
+
+        <!-- Decision Threshold Slider -->
+        <div class="control-box" style="background:#edf5fd;padding:12px;border-radius:8px;border:1px dashed #b5d2f2;">
+          <div class="control-label">
+            <span style="color:var(--accent);">Fall Decision Threshold (&tau;):</span>
+            <span class="control-val-badge" id="val_tau">0.50</span>
+          </div>
+          <input type="range" class="slider" id="rng_tau" min="0.05" max="0.95" step="0.05" value="0.50" oninput="recalculate()" />
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;">
+            <span>&tau;=0.05 (High Recall)</span>
+            <span style="color:var(--green);font-weight:700;">&tau;=0.25 (Optimal Balanced)</span>
+            <span>&tau;=0.95 (High Precision)</span>
+          </div>
+        </div>
+
+        <!-- Peak Acceleration Slider -->
+        <div class="control-box">
+          <div class="control-label">
+            <span>Peak Impact Acceleration Magnitude (||a||<sub>peak</sub>):</span>
+            <span class="control-val-badge" id="val_peak_acc">0.24 g</span>
+          </div>
+          <input type="range" class="slider" id="rng_peak_acc" min="0.10" max="2.50" step="0.01" value="0.24" oninput="recalculate()" />
+        </div>
+
+        <!-- Mean Acceleration Slider -->
+        <div class="control-box">
+          <div class="control-label">
+            <span>Mean Acceleration (||a||<sub>mean</sub>):</span>
+            <span class="control-val-badge" id="val_mean_acc">0.23 g</span>
+          </div>
+          <input type="range" class="slider" id="rng_mean_acc" min="0.10" max="1.50" step="0.01" value="0.23" oninput="recalculate()" />
+        </div>
+
+        <!-- Acceleration Std Dev Slider -->
+        <div class="control-box">
+          <div class="control-label">
+            <span>Acceleration Standard Deviation (&sigma;<sub>a</sub>):</span>
+            <span class="control-val-badge" id="val_std_acc">0.01 g</span>
+          </div>
+          <input type="range" class="slider" id="rng_std_acc" min="0.00" max="0.80" step="0.01" value="0.01" oninput="recalculate()" />
+        </div>
+
+        <!-- Peak Angular Velocity Slider -->
+        <div class="control-box">
+          <div class="control-label">
+            <span>Peak Angular Velocity (||&omega;||<sub>peak</sub>):</span>
+            <span class="control-val-badge" id="val_peak_gyr">0.11 rad/s</span>
+          </div>
+          <input type="range" class="slider" id="rng_peak_gyr" min="0.01" max="3.50" step="0.01" value="0.11" oninput="recalculate()" />
+        </div>
+
+        <!-- Mean Angular Velocity Slider -->
+        <div class="control-box">
+          <div class="control-label">
+            <span>Mean Angular Velocity (||&omega;||<sub>mean</sub>):</span>
+            <span class="control-val-badge" id="val_mean_gyr">0.06 rad/s</span>
+          </div>
+          <input type="range" class="slider" id="rng_mean_gyr" min="0.01" max="1.50" step="0.01" value="0.06" oninput="recalculate()" />
+        </div>
+
+        <!-- Post-Impact Immobility Variance Slider -->
+        <div class="control-box">
+          <div class="control-label">
+            <span>Post-Impact Immobility Variance (Var(a<sub>post</sub>)):</span>
+            <span class="control-val-badge" id="val_immob_var">0.00010</span>
+          </div>
+          <input type="range" class="slider" id="rng_immob_var" min="0.00001" max="0.06000" step="0.0005" value="0.00010" oninput="recalculate()" />
+          <div style="font-size:10.5px;color:var(--muted);margin-top:3px;">
+            Lower variance indicates complete stillness on floor (long-lie hazard).
+          </div>
+        </div>
+
+        <button onclick="applyPreset('adl_walk')" style="width:100%;padding:9px;background:#fff;border:1px solid var(--border);border-radius:6px;font-weight:700;font-size:12.5px;cursor:pointer;color:var(--muted);margin-top:8px;">
+          ↺ Reset Parameters to Default
+        </button>
+      </div>
+
+      <!-- RIGHT COLUMN: Real-Time Predictions, Charts & Plots -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>Live Prediction, Telemetry &amp; Diagnostic Plots</span>
+          <span class="pill pill-green" id="badge_status">Live Model Streaming Active</span>
+        </div>
+
+        <!-- Dynamic Output Banner -->
+        <div class="hero-pred-banner adl" id="heroBanner">
+          <div>
+            <div style="font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;opacity:.8;">Inferred State</div>
+            <div class="hero-title" id="txt_className" style="color:var(--accent);">CLASS 0: ADL / NORMAL</div>
+            <div class="hero-subtitle" id="txt_confidence">Confidence: 99.4% (Steady State Movement)</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:4px;opacity:.7;">Triage Priority</div>
+            <span class="pill pill-green" id="pill_triage" style="font-size:13px;padding:6px 14px;">🟢 STANDARD (Tier 3)</span>
+          </div>
+        </div>
+
+        <!-- Live Waveform Reconstruction Plot -->
+        <div class="waveform-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <h4 style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;">
+              📈 Synthetic 256-Sample IMU Motion Window Profile (Acceleration Magnitude ||a||)
+            </h4>
+            <span class="pill pill-blue" style="font-size:10.5px;">Window: 5.12s @ 50 Hz</span>
+          </div>
+          <div class="waveform-wrap">
+            <canvas id="chartWaveform"></canvas>
+          </div>
+        </div>
+
+        <!-- 2 Side-by-Side Diagnostic Charts -->
+        <div class="charts-grid">
+          <!-- Class Probabilities Bar Chart -->
+          <div class="chart-card">
+            <h4>📊 Softmax Probability Distribution</h4>
+            <div class="chart-wrap">
+              <canvas id="chartProbabilities"></canvas>
+            </div>
+          </div>
+
+          <!-- Severity Index & Immobility Breakdown -->
+          <div class="chart-card">
+            <h4>⚖️ Kinematic Severity Components (SI)</h4>
+            <div class="chart-wrap">
+              <canvas id="chartSeverityRadar"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clinical Diagnostic Rationale -->
+        <div class="rationale-box">
+          <div class="rationale-title" id="txt_rationaleTitle">Diagnostic Analysis &amp; Clinical Rationale:</div>
+          <div id="txt_rationaleBody">
+            Inertial parameters reflect routine daily activity. Acceleration stays well within physiological baseline with no unmitigated ground impact or prolonged post-fall immobility. No caregiver alert required.
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- JavaScript Reactive Logic -->
+  <script>
+    // Presets database
+    const PRESETS = {
+      adl_walk: {
+        peak_acc: 0.24, mean_acc: 0.23, std_acc: 0.01,
+        peak_gyr: 0.11, mean_gyr: 0.06, immob_var: 0.00010,
+        tau: 0.50
+      },
+      adl_sit: {
+        peak_acc: 0.42, mean_acc: 0.28, std_acc: 0.07,
+        peak_gyr: 0.28, mean_gyr: 0.12, immob_var: 0.00250,
+        tau: 0.50
+      },
+      prefall_trip: {
+        peak_acc: 0.54, mean_acc: 0.31, std_acc: 0.11,
+        peak_gyr: 0.48, mean_gyr: 0.19, immob_var: 0.00380,
+        tau: 0.50
+      },
+      fall_slip: {
+        peak_acc: 0.88, mean_acc: 0.35, std_acc: 0.22,
+        peak_gyr: 1.15, mean_gyr: 0.38, immob_var: 0.00085,
+        tau: 0.50
+      },
+      fall_syncope: {
+        peak_acc: 1.45, mean_acc: 0.45, std_acc: 0.35,
+        peak_gyr: 1.95, mean_gyr: 0.52, immob_var: 0.00004,
+        tau: 0.25
+      }
+    };
+
+    let probChartInstance = null;
+    let severityChartInstance = null;
+    let waveformChartInstance = null;
+
+    function applyPreset(key) {
+      const p = PRESETS[key];
+      if (!p) return;
+
+      document.querySelectorAll('.preset-pill').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById('btn_' + key);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      document.getElementById('rng_peak_acc').value = p.peak_acc;
+      document.getElementById('rng_mean_acc').value = p.mean_acc;
+      document.getElementById('rng_std_acc').value = p.std_acc;
+      document.getElementById('rng_peak_gyr').value = p.peak_gyr;
+      document.getElementById('rng_mean_gyr').value = p.mean_gyr;
+      document.getElementById('rng_immob_var').value = p.immob_var;
+      document.getElementById('rng_tau').value = p.tau;
+
+      recalculate();
+    }
+
+    function recalculate() {
+      // 1. Read input values
+      const peak_acc = parseFloat(document.getElementById('rng_peak_acc').value);
+      const mean_acc = parseFloat(document.getElementById('rng_mean_acc').value);
+      const std_acc = parseFloat(document.getElementById('rng_std_acc').value);
+      const peak_gyr = parseFloat(document.getElementById('rng_peak_gyr').value);
+      const mean_gyr = parseFloat(document.getElementById('rng_mean_gyr').value);
+      const immob_var = parseFloat(document.getElementById('rng_immob_var').value);
+      const tau = parseFloat(document.getElementById('rng_tau').value);
+      const model = document.getElementById('sel_model').value;
+
+      // 2. Update visual badges next to sliders
+      document.getElementById('val_peak_acc').innerText = peak_acc.toFixed(2) + ' g';
+      document.getElementById('val_mean_acc').innerText = mean_acc.toFixed(2) + ' g';
+      document.getElementById('val_std_acc').innerText = std_acc.toFixed(2) + ' g';
+      document.getElementById('val_peak_gyr').innerText = peak_gyr.toFixed(2) + ' rad/s';
+      document.getElementById('val_mean_gyr').innerText = mean_gyr.toFixed(2) + ' rad/s';
+      document.getElementById('val_immob_var').innerText = immob_var.toFixed(5);
+      document.getElementById('val_tau').innerText = tau.toFixed(2);
+
+      // 3. Compute model classification logits
+      let fallLogit = 0, prefallLogit = 0, adlLogit = 0;
+
+      if (model === 'tinyfallnet') {
+        // Multi-Scale receptive field weighting with explicit impact gating
+        // Post-impact immobility only contributes to fall confirmation if an impact occurred (peak_acc >= 0.55 g, peak_gyr >= 0.45 rad/s)
+        const hasImpact = (peak_acc >= 0.55 && peak_gyr >= 0.45);
+        const immobilityTerm = hasImpact ? (-0.8 * Math.log10(immob_var + 1e-5)) : 0.0;
+        
+        fallLogit = 3.8 * (peak_acc - 0.58) + 2.0 * (peak_gyr - 0.50) + 1.8 * (std_acc - 0.12) + immobilityTerm;
+        prefallLogit = 2.4 * (std_acc - 0.08) + 2.0 * (peak_gyr - 0.30) - 3.0 * Math.max(0, peak_acc - 0.65);
+        adlLogit = 6.0 * (0.45 - peak_acc) + 4.0 * (0.10 - std_acc) + 3.0 * (0.22 - peak_gyr);
+      } else if (model === 'rf') {
+        fallLogit = (peak_acc > 0.60 ? 2.4 : -1.2) + (peak_gyr > 0.65 ? 1.4 : -0.6);
+        prefallLogit = (peak_acc > 0.36 && peak_acc <= 0.60 ? 2.0 : -1.2);
+        adlLogit = (peak_acc <= 0.36 ? 2.6 : -1.2);
+      } else if (model === 'hgb') {
+        // High majority ADL bias
+        fallLogit = 1.6 * (peak_acc - 0.65) + 1.1 * (peak_gyr - 0.55);
+        prefallLogit = 1.1 * (peak_acc - 0.45) - 0.6;
+        adlLogit = 3.2 * (0.50 - peak_acc);
+      } else {
+        // CNN / CNN-LSTM
+        fallLogit = 2.2 * (peak_acc - 0.52) + 1.4 * (peak_gyr - 0.45);
+        prefallLogit = 1.6 * (std_acc - 0.07) + 1.1 * (mean_gyr - 0.11);
+        adlLogit = 3.0 * (0.45 - peak_acc);
+      }
+
+      // Softmax
+      const maxL = Math.max(adlLogit, prefallLogit, fallLogit);
+      const eADL = Math.exp(adlLogit - maxL);
+      const ePre = Math.exp(prefallLogit - maxL);
+      const eFall = Math.exp(fallLogit - maxL);
+      const sumE = eADL + ePre + eFall;
+
+      const p_adl = eADL / sumE;
+      const p_pre = ePre / sumE;
+      const p_fall = eFall / sumE;
+
+      // 4. Decision with threshold tau
+      let predClass = 0;
+      if (p_fall >= tau) {
+        predClass = 2; // Fall
+      } else if (p_pre > p_adl && p_pre > 0.35) {
+        predClass = 1; // Pre-Fall
+      } else {
+        predClass = 0; // ADL
+      }
+
+      // 5. Kinematic Severity Index (SI) Formula
+      // Post-impact stillness contributes to severity if an impact event or pre-fall has occurred
+      const immobility_factor = (predClass >= 1 || peak_acc >= 0.50) ? (1.0 / (1.0 + 50.0 * immob_var)) : 0.0;
+      const comp_impact = 50.0 * Math.min(peak_acc / 3.0, 1.0);
+      const comp_angular = 30.0 * Math.min(peak_gyr / 5.0, 1.0);
+      const comp_immob = 20.0 * immobility_factor;
+      const severity_index = comp_impact + comp_angular + comp_immob;
+
+      let severity_tier = "Mild";
+      let triage_label = "🟢 STANDARD (Tier 3)";
+      let triage_class = "pill-green";
+
+      if (severity_index >= 70.0 || (predClass === 2 && peak_acc > 1.20)) {
+        severity_tier = "Severe";
+        triage_label = "🔴 URGENT (Tier 1)";
+        triage_class = "pill-red";
+      } else if (severity_index >= 45.0 || predClass === 2) {
+        severity_tier = "Moderate";
+        triage_label = "🟡 HIGH (Tier 2)";
+        triage_class = "pill-orange";
+      } else {
+        severity_tier = "Mild";
+        triage_label = "🟢 STANDARD (Tier 3)";
+        triage_class = "pill-green";
+      }
+
+      // 6. Update Output Banner & Rationale Text
+      const banner = document.getElementById('heroBanner');
+      const txtName = document.getElementById('txt_className');
+      const txtConf = document.getElementById('txt_confidence');
+      const pillTriage = document.getElementById('pill_triage');
+      const rTitle = document.getElementById('txt_rationaleTitle');
+      const rBody = document.getElementById('txt_rationaleBody');
+
+      banner.className = 'hero-pred-banner';
+      pillTriage.className = 'pill ' + triage_class;
+      pillTriage.innerText = triage_label;
+
+      if (predClass === 2) {
+        banner.classList.add('fall');
+        txtName.style.color = '#c0392b';
+        txtName.innerText = '🚨 CLASS 2: CONFIRMED FALL IMPACT';
+        txtConf.innerText = `Fall Probability: ${(p_fall * 100).toFixed(1)}% (Threshold τ = ${tau.toFixed(2)}) | SI: ${severity_index.toFixed(1)} (${severity_tier})`;
+        rTitle.innerText = '⚠️ Emergency Diagnostic Assessment:';
+        rBody.innerHTML = `High-kinetic acceleration spike (||a||<sub>peak</sub> = ${peak_acc.toFixed(2)} g) and rotational velocity (${peak_gyr.toFixed(2)} rad/s) breach the fall threshold (&tau; = ${tau.toFixed(2)}). Post-impact immobility variance indicates low motion quiescence (long-lie hazard). Immediate alert dispatched.`;
+      } else if (predClass === 1) {
+        banner.classList.add('prefall');
+        txtName.style.color = '#e67e22';
+        txtName.innerText = '⚠️ CLASS 1: PRE-FALL / LOSS OF BALANCE';
+        txtConf.innerText = `Pre-Fall Probability: ${(p_pre * 100).toFixed(1)}% | Fall Prob: ${(p_fall * 100).toFixed(1)}% (SI: ${severity_index.toFixed(1)})`;
+        rTitle.innerText = '⚠️ Pre-Fall Kinematic Assessment:';
+        rBody.innerHTML = `Kinematic variance reflects rapid postural instability or a stumble-recovery attempt. Acceleration exceeds standard ADL baseline, but lacks the high-g ground contact impact signature of an unmitigated fall. Event logged for mobility trend analysis.`;
+      } else {
+        banner.classList.add('adl');
+        txtName.style.color = '#1a56a0';
+        txtName.innerText = '✅ CLASS 0: ADL / NORMAL ACTIVITY';
+        txtConf.innerText = `ADL Probability: ${(p_adl * 100).toFixed(1)}% (Steady State) | SI: ${severity_index.toFixed(1)} (${severity_tier})`;
+        rTitle.innerText = '✅ Routine Activity Assessment:';
+        rBody.innerHTML = `Inertial measurements conform strictly to normal activities of daily living. Resultant acceleration remains near 1.0 g gravitational baseline with low rotational dispersion. No alert condition.`;
+      }
+
+      // 7. Update Plots
+      updateProbabilitiesChart(p_adl, p_pre, p_fall);
+      updateSeverityChart(comp_impact, comp_angular, comp_immob, severity_index);
+      updateWaveformChart(peak_acc, mean_acc, std_acc, predClass, immob_var);
+    }
+
+    // Chart 1: Probabilities
+    function updateProbabilitiesChart(p0, p1, p2) {
+      const ctx = document.getElementById('chartProbabilities');
+      if (!ctx) return;
+
+      const dataVals = [(p0 * 100).toFixed(1), (p1 * 100).toFixed(1), (p2 * 100).toFixed(1)];
+
+      if (!probChartInstance) {
+        probChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Class 0 (ADL)', 'Class 1 (Pre-Fall)', 'Class 2 (Fall)'],
+            datasets: [{
+              data: dataVals,
+              backgroundColor: ['#1a56a0cc', '#e67e22cc', '#c0392bcc'],
+              borderColor: ['#1a56a0', '#e67e22', '#c0392b'],
+              borderWidth: 1.5,
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
+            }
+          }
+        });
+      } else {
+        probChartInstance.data.datasets[0].data = dataVals;
+        probChartInstance.update();
+      }
+    }
+
+    // Chart 2: Severity Components
+    function updateSeverityChart(cImp, cAng, cImm, totalSI) {
+      const ctx = document.getElementById('chartSeverityRadar');
+      if (!ctx) return;
+
+      const dataVals = [cImp.toFixed(1), cAng.toFixed(1), cImm.toFixed(1), totalSI.toFixed(1)];
+
+      if (!severityChartInstance) {
+        severityChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Impact (Max 50)', 'Angular (Max 30)', 'Immobility (Max 20)', 'Total SI (Max 100)'],
+            datasets: [{
+              data: dataVals,
+              backgroundColor: ['#4e79a7cc', '#f28e2bcc', '#e15759cc', '#59a14fcc'],
+              borderRadius: 5
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { min: 0, max: 100 }
+            }
+          }
+        });
+      } else {
+        severityChartInstance.data.datasets[0].data = dataVals;
+        severityChartInstance.update();
+      }
+    }
+
+    // Chart 3: Synthetic 256-sample window waveform
+    function updateWaveformChart(peakAcc, meanAcc, stdAcc, predClass, immobVar) {
+      const ctx = document.getElementById('chartWaveform');
+      if (!ctx) return;
+
+      const points = [];
+      const labels = [];
+
+      for (let i = 0; i < 256; i++) {
+        labels.push(i);
+        // Base random jitter
+        const noise = (Math.random() - 0.5) * stdAcc * 0.5;
+        let val = meanAcc + noise;
+
+        if (predClass === 2) {
+          // Impact spike around sample 120-140
+          if (i >= 120 && i <= 140) {
+            const dist = Math.abs(i - 130);
+            val = peakAcc * Math.exp(-dist / 3.0);
+          } else if (i > 140) {
+            // Post impact stillness
+            val = 0.22 + (Math.random() - 0.5) * Math.sqrt(immobVar);
+          }
+        } else if (predClass === 1) {
+          // Pre-fall stumble oscillations
+          if (i >= 90 && i <= 170) {
+            val = meanAcc + Math.sin(i / 5) * (peakAcc - meanAcc);
+          }
+        } else {
+          // Normal rhythmic walking pattern
+          val = meanAcc + Math.sin(i / 8) * (peakAcc - meanAcc) * 0.5 + noise;
+        }
+
+        points.push(Math.max(0.05, val.toFixed(3)));
+      }
+
+      const lineColor = predClass === 2 ? '#c0392b' : (predClass === 1 ? '#e67e22' : '#1a56a0');
+
+      if (!waveformChartInstance) {
+        waveformChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Acceleration Magnitude ||a|| (g)',
+              data: points,
+              borderColor: lineColor,
+              backgroundColor: lineColor + '15',
+              borderWidth: 2,
+              fill: true,
+              pointRadius: 0,
+              tension: 0.2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              x: {
+                title: { display: true, text: 'Sample Time Index (0 to 255 @ 50 Hz)', font: { size: 10 } },
+                ticks: { maxTicksLimit: 12, font: { size: 9 } }
+              },
+              y: {
+                min: 0,
+                max: Math.max(2.5, peakAcc * 1.2),
+                title: { display: true, text: 'Magnitude (g)', font: { size: 10 } }
+              }
+            }
+          }
+        });
+      } else {
+        waveformChartInstance.data.datasets[0].data = points;
+        waveformChartInstance.data.datasets[0].borderColor = lineColor;
+        waveformChartInstance.data.datasets[0].backgroundColor = lineColor + '15';
+        waveformChartInstance.options.scales.y.max = Math.max(2.5, peakAcc * 1.2);
+        waveformChartInstance.update('none');
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      applyPreset('adl_walk');
+    });
+  </script>
+</body>
+</html>

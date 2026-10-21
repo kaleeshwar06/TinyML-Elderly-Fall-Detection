@@ -1,0 +1,6 @@
+Model,Total_Parameters,Trainable_Parameters,FP32_Model_Size_KB,INT8_Quantized_Size_KB,Mean_Inference_Latency_ms,Std_Inference_Latency_ms,Throughput_Inferences_Per_Sec,Estimated_MCU_RAM_Util_Pct,MCU_Deployment_Feasibility
+Random Forest (Handcrafted),63430,0,1982.19,495.55,0.185,0.02,5405.0,45.0,Requires Tree Array in Flash
+HistGradientBoosting,3100,0,36.5,12.2,0.112,0.015,8928.0,2.4,YES (Tree Ensemble)
+Standard 1D-CNN,44899,44899,175.39,43.85,0.803,0.149,1245.8,8.56,YES (Optimal for ESP32/STM32)
+CNN-LSTM,46947,46947,183.39,45.85,1.488,0.257,671.8,8.95,YES (Optimal for ESP32/STM32)
+Proposed TinyFallNet (SE-ResCNN),20975,20975,81.93,20.48,3.005,0.389,332.8,4.0,YES (Optimal for ESP32/STM32)

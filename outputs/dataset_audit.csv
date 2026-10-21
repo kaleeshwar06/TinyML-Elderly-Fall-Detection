@@ -1,0 +1,8 @@
+path,extension,size_bytes,kind,n_rows,n_cols,columns,dtypes,missing_values,duplicate_rows,note
+Three Classes\weights_3.txt,.txt,75,raw_numeric_signal,3.0,1.0,(no header) col0..col0,float64,0.0,0.0,
+Three Classes\x_test_3,,116023296,other,,,,,,,unsupported extension (not read)
+Three Classes\x_train_3,,478439424,other,,,,,,,unsupported extension (not read)
+Three Classes\x_val_3,,124311552,other,,,,,,,unsupported extension (not read)
+Three Classes\y_test_3,,56652,other,,,,,,,unsupported extension (not read)
+Three Classes\y_train_3,,233613,other,,,,,,,unsupported extension (not read)
+Three Classes\y_val_3,,60699,other,,,,,,,unsupported extension (not read)

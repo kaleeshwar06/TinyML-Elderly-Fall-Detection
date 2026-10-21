@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TinyML Fall Detection — Publication Review Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #f0f4f8;
+      --card:    #ffffff;
+      --border:  #d1dbe8;
+      --accent:  #1a56a0;
+      --accent2: #0e8a5f;
+      --warn:    #c0392b;
+      --gold:    #e67e22;
+      --text:    #1c2b3a;
+      --muted:   #5a6a7a;
+      --badge-proposed: #1a56a0;
+      --radius:  10px;
+      --shadow:  0 2px 12px rgba(26,86,160,.10);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      background: linear-gradient(135deg, #0d2d5e 0%, #1a56a0 60%, #1e7acc 100%);
+      color: #fff;
+      padding: 36px 40px 28px;
+    }
+    .site-header .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .badge {
+      display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .5px;
+      padding: 3px 10px; border-radius: 20px; background: rgba(255,255,255,.18); color: #fff;
+      border: 1px solid rgba(255,255,255,.3);
+    }
+    .badge.green  { background: rgba(14,138,95,.55); border-color: #0e8a5f; }
+    .badge.gold   { background: rgba(230,126,34,.55); border-color: #e67e22; }
+    .site-header h1 { font-size: 24px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+    .site-header p  { font-size: 13.5px; opacity: .85; max-width: 860px; }
+    .team-row { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 16px; }
+    .team-card {
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
+      border-radius: 8px; padding: 10px 16px; min-width: 200px;
+    }
+    .team-card .role { font-size: 10px; letter-spacing: .6px; opacity: .7; text-transform: uppercase; }
+    .team-card .name { font-size: 13.5px; font-weight: 600; margin-top: 2px; }
+
+    /* ── Navigation ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: #0d2d5e; border-bottom: 2px solid #1a56a0;
+      padding: 0 20px; display: flex; flex-wrap: wrap; gap: 2px;
+    }
+    nav a {
+      color: rgba(255,255,255,.75); text-decoration: none; font-size: 12.5px; font-weight: 500;
+      padding: 11px 14px; display: inline-block; transition: color .2s, background .2s;
+      border-bottom: 3px solid transparent;
+    }
+    nav a:hover, nav a.active { color: #fff; border-bottom-color: #4fa3e0; background: rgba(255,255,255,.07); }
+
+    /* ── Layout ── */
+    .page { max-width: 1300px; margin: 0 auto; padding: 28px 24px 60px; }
+    section { margin-bottom: 42px; }
+    .section-title {
+      font-size: 17px; font-weight: 700; color: var(--accent);
+      border-left: 4px solid var(--accent); padding-left: 12px;
+      margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+    }
+    .section-title .num {
+      background: var(--accent); color: #fff; width: 24px; height: 24px;
+      border-radius: 50%; display: inline-flex; align-items: center;
+      justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 24px;
+      box-shadow: var(--shadow);
+    }
+    .card + .card { margin-top: 16px; }
+    .card-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
+
+    /* ── KPI Grid ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 14px; }
+    .kpi {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 18px;
+      box-shadow: var(--shadow); text-align: center;
+    }
+    .kpi.accent { border-top: 3px solid var(--accent); }
+    .kpi.green  { border-top: 3px solid var(--accent2); }
+    .kpi.warn   { border-top: 3px solid var(--warn); }
+    .kpi.gold   { border-top: 3px solid var(--gold); }
+    .kpi-val  { font-size: 26px; font-weight: 800; color: var(--accent); line-height: 1.1; }
+    .kpi.green .kpi-val { color: var(--accent2); }
+    .kpi.warn  .kpi-val { color: var(--warn); }
+    .kpi.gold  .kpi-val { color: var(--gold); }
+    .kpi-label { font-size: 11.5px; color: var(--muted); margin-top: 5px; font-weight: 500; }
+
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    thead th {
+      background: #eaf1fb; color: var(--accent); font-weight: 700;
+      padding: 9px 12px; text-align: left; border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr:nth-child(even) { background: #f7faff; }
+    tbody tr:hover { background: #eef4fc; }
+    tbody td { padding: 8px 12px; border-bottom: 1px solid #e5ecf4; vertical-align: middle; }
+    tr.proposed-row td { background: #eaf3ff !important; font-weight: 600; }
+    tr.proposed-row td:first-child::after {
+      content: " ★"; color: var(--accent); font-weight: 700;
+    }
+    .pill {
+      display: inline-block; padding: 2px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; white-space: nowrap;
+    }
+    .pill-green  { background: #d4f4e5; color: #0a6640; }
+    .pill-blue   { background: #ddeeff; color: #0d3a7c; }
+    .pill-orange { background: #fde8cc; color: #8a4200; }
+    .pill-red    { background: #fde0de; color: #8a1010; }
+    .pill-gray   { background: #e9ecef; color: #495057; }
+    .bar-inline {
+      display: inline-block; height: 6px; border-radius: 4px;
+      background: var(--accent); vertical-align: middle; margin-right: 6px;
+    }
+
+    /* ── Charts ── */
+    .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+    .chart-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+    .chart-box canvas { max-height: 240px; }
+    .chart-title { font-size: 12.5px; font-weight: 700; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .4px; }
+
+    /* ── Figures ── */
+    .fig-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 18px; }
+    .fig-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); text-align: center; }
+    .fig-card img { width: 100%; max-width: 100%; border-radius: 6px; border: 1px solid #dde4ef; }
+    .fig-caption { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+    /* ── Per-class section ── */
+    .class-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; }
+    .class-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 18px 20px; box-shadow: var(--shadow); }
+    .class-card .class-label { font-size: 13px; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid; }
+    .class-card.adl   .class-label { color: #1a56a0; border-color: #1a56a0; }
+    .class-card.prefall .class-label { color: #e67e22; border-color: #e67e22; }
+    .class-card.fall  .class-label { color: #c0392b; border-color: #c0392b; }
+    .metric-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px dashed #e8edf3; font-size: 12.5px; }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-name { color: var(--muted); }
+    .metric-val  { font-weight: 700; color: var(--text); }
+
+    /* ── Confusion Matrix Stats ── */
+    .cm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .cm-cell {
+      border-radius: 6px; padding: 8px 10px; text-align: center; font-size: 12px;
+    }
+    .cm-tp { background: #d4f4e5; color: #0a5e38; }
+    .cm-fp { background: #fde8cc; color: #7a3800; }
+    .cm-fn { background: #fde0de; color: #7a0a0a; }
+    .cm-tn { background: #eaf1fb; color: #0d3a7c; }
+    .cm-label { font-size: 10px; font-weight: 700; letter-spacing: .4px; opacity: .7; }
+    .cm-val { font-size: 20px; font-weight: 800; margin-top: 2px; }
+
+    /* ── Pipeline Banner ── */
+    .pipeline {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow);
+    }
+    .pipe-step {
+      background: #eaf1fb; border: 1px solid #b8d0ef;
+      border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600;
+      color: var(--accent); text-align: center;
+    }
+    .pipe-arrow { color: var(--accent); font-size: 18px; font-weight: 700; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 24px;
+      color: var(--muted); font-size: 12px;
+      border-top: 1px solid var(--border); background: var(--card);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      .site-header { padding: 24px 16px 20px; }
+      .page { padding: 20px 12px 40px; }
+      .fig-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════ HEADER ══════════════════ -->
+<header class="site-header">
+  <div class="badge-row">
+    <span class="badge">Journal Publication Review</span>
+    <span class="badge green">TinyML · Wearable Computing</span>
+    <span class="badge gold">Fall Detection · Elderly Care</span>
+    <span class="badge">IMU · ESP32 / Arduino Nano 33 BLE Sense</span>
+  </div>
+  <h1>Design and Development of a Context-Aware TinyML Wearable for Elderly Fall Detection,<br>
+      Sensor-Derived Severity Assessment, and Post-Fall BPM–SpO₂ Monitoring</h1>
+  <p>
+    A four-stage ML pipeline trained on a 116,988-window, 6-axis IMU dataset. The proposed
+    <strong>TinyFallNet (Multi-Scale Depthwise SE-ResCNN)</strong> delivers clinically competitive
+    fall sensitivity with only 20,975 parameters — deployable on embedded microcontrollers.
+  </p>
+  <div class="team-row">
+    <div class="team-card"><div class="role">ML / Model Training</div><div class="name">Kaleeshwar</div></div>
+    <div class="team-card"><div class="role">Hardware / Sensor</div><div class="name">Bharath Palanisamy Mettukadai</div></div>
+    <div class="team-card"><div class="role">Software / IoT</div><div class="name">Hiba Fathima</div></div>
+  </div>
+</header>
+
+<!-- ══════════════════ NAV ══════════════════ -->
+<nav>
+  <a href="#overview">Overview</a>
+  <a href="#dataset">Dataset</a>
+  <a href="#benchmark">Model Benchmark</a>
+  <a href="#tinyfallnet">TinyFallNet</a>
+  <a href="#hardware">Hardware Profiling</a>
+  <a href="#ablation">Loss Ablation</a>
+  <a href="#threshold">Threshold Calibration</a>
+  <a href="#triage">Severity & Triage</a>
+  <a href="#figures">Figures</a>
+  <a href="live_testing.html" target="_blank" style="background:#e67e22;color:#fff;border-radius:4px;margin-left:8px;font-weight:700;">★ Launch Live Testing UI ↗</a>
+</nav>
+
+<main class="page">
+
+  <!-- ══════════════════ §0 PIPELINE ══════════════════ -->
+  <section id="overview">
+    <div class="section-title"><span class="num">0</span>System Pipeline</div>
+    <div class="pipeline">
+      <div class="pipe-step">📡 IMU Sensor Data<br><small>6-axis, 256-sample windows</small></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">🔧 Feature Extraction<br><small>88 Statistical Features</small></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">🧠 Fall Classification<br><small>5 Models Evaluated</small></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">📊 Severity Assessment<br><small>Impact + Immobility Index</small></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">💓 BPM / SpO₂ Triage<br><small>Simulated Physiological</small></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">🚨 Priority Alert<br><small>STANDARD / HIGH / URGENT</small></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ §1 DATASET ══════════════════ -->
+  <section id="dataset">
+    <div class="section-title"><span class="num">1</span>Dataset Overview</div>
+    <div class="kpi-grid">
+      <div class="kpi accent"><div class="kpi-val">116,988</div><div class="kpi-label">Total IMU Windows</div></div>
+      <div class="kpi accent"><div class="kpi-val">256</div><div class="kpi-label">Samples per Window</div></div>
+      <div class="kpi accent"><div class="kpi-val">6</div><div class="kpi-label">IMU Channels (Acc + Gyro)</div></div>
+      <div class="kpi accent"><div class="kpi-val">88</div><div class="kpi-label">Extracted Features</div></div>
+      <div class="kpi gold"><div class="kpi-val">77,871</div><div class="kpi-label">Training Samples</div></div>
+      <div class="kpi gold"><div class="kpi-val">20,233</div><div class="kpi-label">Validation Samples</div></div>
+      <div class="kpi gold"><div class="kpi-val">18,884</div><div class="kpi-label">Test Samples</div></div>
+      <div class="kpi warn"><div class="kpi-val">~96%</div><div class="kpi-label">Class Imbalance (ADL)</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;">
+      <div class="chart-box">
+        <div class="chart-title">Class Distribution — Full Dataset</div>
+        <canvas id="chartClassDist"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Train / Val / Test Split</div>
+        <canvas id="chartSplit"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ §2 BENCHMARK ══════════════════ -->
+  <section id="benchmark">
+    <div class="section-title"><span class="num">2</span>Model Architecture Benchmark (Test Set, N = 18,884)</div>
+    <div class="card">
+      <div class="table-wrap">
+        <table id="benchmarkTable">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Accuracy ↑</th>
+              <th>Balanced Acc ↑</th>
+              <th>Macro F1 ↑</th>
+              <th>Fall Sensitivity ↑</th>
+              <th>Fall FAR ↓</th>
+              <th>Fall F1 ↑</th>
+              <th>Fall ROC-AUC ↑</th>
+              <th>MCC ↑</th>
+              <th>Train Time (s)</th>
+            </tr>
+          </thead>
+          <tbody id="benchmarkBody"></tbody>
+        </table>
+      </div>
+      <p style="margin-top:10px;font-size:11.5px;color:var(--muted);">
+        ★ Proposed model &nbsp;|&nbsp; ↑ Higher is better &nbsp;|&nbsp; ↓ Lower is better &nbsp;|&nbsp; FAR = False Alarm Rate &nbsp;|&nbsp; MCC = Matthews Correlation Coefficient
+      </p>
+    </div>
+    <div class="chart-grid" style="margin-top:18px;">
+      <div class="chart-box">
+        <div class="chart-title">Fall Sensitivity vs Fall F1 Score</div>
+        <canvas id="chartSenF1"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Macro F1 vs Balanced Accuracy</div>
+        <canvas id="chartMacroBA"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ §3 TINYFALLNET PER-CLASS ══════════════════ -->
+  <section id="tinyfallnet">
+    <div class="section-title"><span class="num">3</span>Proposed TinyFallNet — Per-Class Metrics</div>
+    <div class="kpi-grid" style="margin-bottom:18px;">
+      <div class="kpi green"><div class="kpi-val">97.45%</div><div class="kpi-label">Overall Accuracy</div></div>
+      <div class="kpi green"><div class="kpi-val">84.50%</div><div class="kpi-label">Balanced Accuracy</div></div>
+      <div class="kpi green"><div class="kpi-val">74.0%</div><div class="kpi-label">Macro F1 Score</div></div>
+      <div class="kpi green"><div class="kpi-val">95.80%</div><div class="kpi-label">Fall Sensitivity</div></div>
+      <div class="kpi green"><div class="kpi-val">89.88%</div><div class="kpi-label">Fall F1 Score</div></div>
+      <div class="kpi green"><div class="kpi-val">0.726</div><div class="kpi-label">MCC</div></div>
+      <div class="kpi accent"><div class="kpi-val">0.9879</div><div class="kpi-label">Fall ROC-AUC</div></div>
+      <div class="kpi accent"><div class="kpi-val">0.9521</div><div class="kpi-label">Fall PR-AUC</div></div>
+    </div>
+
+    <div class="class-grid">
+      <!-- Class 0: ADL -->
+      <div class="class-card adl">
+        <div class="class-label">Class 0 — ADL / Normal Activity</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div class="cm-cell cm-tp"><div class="cm-label">TP</div><div class="cm-val">17,785</div></div>
+          <div class="cm-cell cm-fp"><div class="cm-label">FP</div><div class="cm-val">74</div></div>
+          <div class="cm-cell cm-fn"><div class="cm-label">FN</div><div class="cm-val">395</div></div>
+          <div class="cm-cell cm-tn"><div class="cm-label">TN</div><div class="cm-val">630</div></div>
+        </div>
+        <div class="metric-row"><span class="metric-name">Sensitivity / Recall</span><span class="metric-val">97.83%</span></div>
+        <div class="metric-row"><span class="metric-name">Specificity</span><span class="metric-val">89.49%</span></div>
+        <div class="metric-row"><span class="metric-name">Precision</span><span class="metric-val">99.59%</span></div>
+        <div class="metric-row"><span class="metric-name">F1 Score</span><span class="metric-val">98.70%</span></div>
+        <div class="metric-row"><span class="metric-name">G-Mean</span><span class="metric-val">93.57%</span></div>
+        <div class="metric-row"><span class="metric-name">ROC-AUC (OvR)</span><span class="metric-val">0.9870</span></div>
+        <div class="metric-row"><span class="metric-name">DOR</span><span class="metric-val">383.3</span></div>
+        <div class="metric-row"><span class="metric-name">Support</span><span class="metric-val">18,180</span></div>
+      </div>
+
+      <!-- Class 1: Pre-Fall -->
+      <div class="class-card prefall">
+        <div class="class-label">Class 1 — Pre-Fall / Alert</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div class="cm-cell cm-tp"><div class="cm-label">TP</div><div class="cm-val">94</div></div>
+          <div class="cm-cell cm-fp"><div class="cm-label">FP</div><div class="cm-val">312</div></div>
+          <div class="cm-cell cm-fn"><div class="cm-label">FN</div><div class="cm-val">63</div></div>
+          <div class="cm-cell cm-tn"><div class="cm-label">TN</div><div class="cm-val">18,415</div></div>
+        </div>
+        <div class="metric-row"><span class="metric-name">Sensitivity / Recall</span><span class="metric-val">59.87%</span></div>
+        <div class="metric-row"><span class="metric-name">Specificity</span><span class="metric-val">98.33%</span></div>
+        <div class="metric-row"><span class="metric-name">Precision</span><span class="metric-val">23.15%</span></div>
+        <div class="metric-row"><span class="metric-name">F1 Score</span><span class="metric-val">33.39%</span></div>
+        <div class="metric-row"><span class="metric-name">G-Mean</span><span class="metric-val">76.73%</span></div>
+        <div class="metric-row"><span class="metric-name">ROC-AUC (OvR)</span><span class="metric-val">0.9241</span></div>
+        <div class="metric-row"><span class="metric-name">DOR</span><span class="metric-val">88.07</span></div>
+        <div class="metric-row"><span class="metric-name">Support</span><span class="metric-val">157</span></div>
+      </div>
+
+      <!-- Class 2: Fall -->
+      <div class="class-card fall">
+        <div class="class-label">Class 2 — Fall ⚠️ (Primary Target)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div class="cm-cell cm-tp"><div class="cm-label">TP</div><div class="cm-val">524</div></div>
+          <div class="cm-cell cm-fp"><div class="cm-label">FP</div><div class="cm-val">95</div></div>
+          <div class="cm-cell cm-fn"><div class="cm-label">FN</div><div class="cm-val">23</div></div>
+          <div class="cm-cell cm-tn"><div class="cm-label">TN</div><div class="cm-val">18,242</div></div>
+        </div>
+        <div class="metric-row"><span class="metric-name">Sensitivity / Recall</span><span class="metric-val" style="color:var(--accent2)">95.80%</span></div>
+        <div class="metric-row"><span class="metric-name">Specificity</span><span class="metric-val">99.48%</span></div>
+        <div class="metric-row"><span class="metric-name">Precision (PPV)</span><span class="metric-val">84.65%</span></div>
+        <div class="metric-row"><span class="metric-name">NPV</span><span class="metric-val">99.87%</span></div>
+        <div class="metric-row"><span class="metric-name">F1 Score</span><span class="metric-val">89.88%</span></div>
+        <div class="metric-row"><span class="metric-name">False Alarm Rate</span><span class="metric-val">0.52%</span></div>
+        <div class="metric-row"><span class="metric-name">Miss Rate (FNR)</span><span class="metric-val">4.20%</span></div>
+        <div class="metric-row"><span class="metric-name">G-Mean</span><span class="metric-val">97.62%</span></div>
+        <div class="metric-row"><span class="metric-name">DOR</span><span class="metric-val" style="color:var(--warn);font-size:15px">4,374.7</span></div>
+        <div class="metric-row"><span class="metric-name">ROC-AUC (OvR)</span><span class="metric-val">0.9879</span></div>
+        <div class="metric-row"><span class="metric-name">PR-AUC (OvR)</span><span class="metric-val">0.9521</span></div>
+        <div class="metric-row"><span class="metric-name">MCC</span><span class="metric-val">0.897</span></div>
+        <div class="metric-row"><span class="metric-name">Support</span><span class="metric-val">547</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ §4 HARDWARE ══════════════════ -->
+  <section id="hardware">
+    <div class="section-title"><span class="num">4</span>TinyML Hardware Profiling</div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Parameters</th>
+              <th>FP32 Size (KB)</th>
+              <th>INT8 Size (KB)</th>
+              <th>Latency (ms)</th>
+              <th>Throughput (inf/s)</th>
+              <th>MCU RAM Util (%)</th>
+              <th>MCU Feasibility</th>
+            </tr>
+          </thead>
+          <tbody id="hardwareBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="chart-grid" style="margin-top:18px;">
+      <div class="chart-box">
+        <div class="chart-title">Model Size (INT8 KB) vs Latency (ms)</div>
+        <canvas id="chartPareto"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Parameter Count Comparison</div>
+        <canvas id="chartParams"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ §5 ABLATION ══════════════════ -->
+  <section id="ablation">
+    <div class="section-title"><span class="num">5</span>Loss Function & Class-Balancing Ablation Study</div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Loss Configuration</th>
+              <th>Accuracy ↑</th>
+              <th>Balanced Acc ↑</th>
+              <th>Macro F1 ↑</th>
+              <th>Fall Sensitivity ↑</th>
+              <th>Fall FAR ↓</th>
+              <th>Fall F1 ↑</th>
+              <th>MCC ↑</th>
+            </tr>
+          </thead>
+          <tbody id="ablationBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="chart-box" style="margin-top:18px;">
+      <div class="chart-title">Fall Sensitivity vs MCC Across Loss Configurations</div>
+      <canvas id="chartAblation" style="max-height:220px;"></canvas>
+    </div>
+  </section>
+
+  <!-- ══════════════════ §6 THRESHOLD ══════════════════ -->
+  <section id="threshold">
+    <div class="section-title"><span class="num">6</span>Decision Threshold Calibration Study (Fall Class)</div>
+    <div class="kpi-grid" style="margin-bottom:18px;">
+      <div class="kpi green"><div class="kpi-val">τ = 0.25</div><div class="kpi-label">Optimal Balanced Point</div></div>
+      <div class="kpi green"><div class="kpi-val">97.81%</div><div class="kpi-label">Sensitivity @ τ=0.25</div></div>
+      <div class="kpi green"><div class="kpi-val">79.73%</div><div class="kpi-label">F1 Score @ τ=0.25</div></div>
+      <div class="kpi accent"><div class="kpi-val">τ = 0.50</div><div class="kpi-label">Default Threshold</div></div>
+      <div class="kpi accent"><div class="kpi-val">95.80%</div><div class="kpi-label">Sensitivity @ τ=0.50</div></div>
+      <div class="kpi accent"><div class="kpi-val">90.19%</div><div class="kpi-label">F1 Score @ τ=0.50</div></div>
+      <div class="kpi warn"><div class="kpi-val">τ = 0.05</div><div class="kpi-label">Maximum Sensitivity Point</div></div>
+      <div class="kpi warn"><div class="kpi-val">98.17%</div><div class="kpi-label">Sensitivity @ τ=0.05</div></div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">Sensitivity / Specificity / F1 / FAR vs Decision Threshold</div>
+      <canvas id="chartThreshold" style="max-height:260px;"></canvas>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Threshold (τ)</th>
+              <th>Sensitivity ↑</th>
+              <th>Specificity ↑</th>
+              <th>Precision ↑</th>
+              <th>F1 Score ↑</th>
+              <th>FAR ↓</th>
+              <th>MCC ↑</th>
+              <th>TP</th><th>FP</th><th>FN</th><th>TN</th>
+            </tr>
+          </thead>
+          <tbody id="thresholdBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ §7 TRIAGE ══════════════════ -->
+  <section id="triage">
+    <div class="section-title"><span class="num">7</span>Sensor-Derived Fall Severity & Post-Fall Physiological Triage</div>
+    <div class="kpi-grid" style="margin-bottom:18px;">
+      <div class="kpi warn"><div class="kpi-val">619</div><div class="kpi-label">Confirmed Fall Detections</div></div>
+      <div class="kpi green"><div class="kpi-val">618</div><div class="kpi-label">Mild Severity (99.8%)</div></div>
+      <div class="kpi gold"><div class="kpi-val">1</div><div class="kpi-label">Moderate Severity (0.2%)</div></div>
+      <div class="kpi green"><div class="kpi-val">618</div><div class="kpi-label">STANDARD Triage (Tier 3 Green)</div></div>
+      <div class="kpi gold"><div class="kpi-val">1</div><div class="kpi-label">HIGH Triage (Tier 2 Yellow)</div></div>
+      <div class="kpi accent"><div class="kpi-val">0</div><div class="kpi-label">URGENT Triage (Tier 1 Red)</div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-box">
+        <div class="chart-title">Triage Priority Distribution</div>
+        <canvas id="chartTriage"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Severity Category Breakdown</div>
+        <canvas id="chartSeverity"></canvas>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">Triage Stage Definitions</div>
+      <table>
+        <thead>
+          <tr><th>Priority</th><th>Tier</th><th>Colour Code</th><th>Severity Index</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="pill pill-red">URGENT</span></td>
+            <td>Tier 1</td><td>🔴 Red</td><td>&gt; 80</td>
+            <td>Immediate Emergency Dispatch</td>
+          </tr>
+          <tr>
+            <td><span class="pill pill-orange">HIGH</span></td>
+            <td>Tier 2</td><td>🟡 Yellow</td><td>50–80</td>
+            <td>Caregiver Call & Review</td>
+          </tr>
+          <tr>
+            <td><span class="pill pill-green">STANDARD</span></td>
+            <td>Tier 3</td><td>🟢 Green</td><td>&lt; 50</td>
+            <td>Self-Recovery Monitoring</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════════════ §8 FIGURES ══════════════════ -->
+  <section id="figures">
+    <div class="section-title"><span class="num">8</span>Publication Figures (300 DPI)</div>
+    <div class="fig-grid">
+      <div class="fig-card">
+        <img src="outputs/confusion_matrices_all_models.png" alt="Confusion Matrices" />
+        <div class="fig-caption"><strong>Fig. 1</strong> — Normalized confusion matrices for all five evaluated architectures. TinyFallNet achieves the best trade-off between fall detection and false alarm suppression.</div>
+      </div>
+      <div class="fig-card">
+        <img src="outputs/roc_and_pr_curves_tinyfallnet.png" alt="ROC and PR Curves" />
+        <div class="fig-caption"><strong>Fig. 2</strong> — One-vs-Rest ROC (AUC) and Precision-Recall curves for the proposed TinyFallNet. Fall class: ROC-AUC = 0.9879, PR-AUC = 0.9521.</div>
+      </div>
+      <div class="fig-card">
+        <img src="outputs/tinyml_pareto_frontier.png" alt="TinyML Pareto Frontier" />
+        <div class="fig-caption"><strong>Fig. 3</strong> — TinyML Pareto frontier: Accuracy vs Inference Latency vs Model Memory. TinyFallNet achieves the optimal compact footprint with competitive accuracy.</div>
+      </div>
+      <div class="fig-card">
+        <img src="outputs/threshold_calibration_plot.png" alt="Threshold Calibration" />
+        <div class="fig-caption"><strong>Fig. 4</strong> — Fall-class decision threshold calibration sweep (τ = 0.05 to 0.95). Optimal clinical operating point identified at τ = 0.25.</div>
+      </div>
+      <div class="fig-card">
+        <img src="outputs/severity_and_physiological_triage.png" alt="Severity and Physiological Triage" />
+        <div class="fig-caption"><strong>Fig. 5</strong> — Sensor-derived fall severity index distribution and simulated post-fall BPM / SpO₂ physiological triage scatter by priority tier.</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Context-Aware TinyML Fall Detection Pipeline &nbsp;·&nbsp; Publication Review Dashboard</p>
+  <p style="margin-top:4px;opacity:.6;">Models: Random Forest · HistGradientBoosting · Standard 1D-CNN · CNN-LSTM · Proposed TinyFallNet (SE-ResCNN)</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════ SCRIPTS ═══════════════════════════════════════════ -->
+<script>
+/* ── Shared Palette ── */
+const COLORS = {
+  rf:   '#4e79a7',
+  hgb:  '#59a14f',
+  cnn:  '#f28e2b',
+  lstm: '#e15759',
+  tiny: '#1a56a0',   // proposed — highlighted
+};
+const MODEL_LABELS = [
+  'Random Forest', 'HistGradientBoosting', 'Standard 1D-CNN', 'CNN-LSTM', 'TinyFallNet ★'
+];
+const MODEL_COLORS = [COLORS.rf, COLORS.hgb, COLORS.cnn, COLORS.lstm, COLORS.tiny];
+
+/* ══════════════════ BENCHMARK DATA ══════════════════ */
+const benchmarkData = [
+  { model: 'Random Forest (Handcrafted)', acc: 96.22, ba: 84.94, mf1: 69.67, fsen: 96.53, ffar: 1.036, ff1: 83.48, fAUC: 99.75, mcc: 0.654, time: 4.84, proposed: false },
+  { model: 'HistGradientBoosting',        acc: 98.32, ba: 69.66, mf1: 71.18, fsen: 87.39, ffar: 0.273, ff1: 88.93, fAUC: 99.83, mcc: 0.759, time: 2.75, proposed: false },
+  { model: 'Standard 1D-CNN',             acc: 97.17, ba: 84.98, mf1: 72.92, fsen: 94.33, ffar: 0.682, ff1: 86.87, fAUC: 99.68, mcc: 0.706, time: 236.82, proposed: false },
+  { model: 'CNN-LSTM',                    acc: 95.24, ba: 83.67, mf1: 66.62, fsen: 95.61, ffar: 1.292, ff1: 80.03, fAUC: 99.64, mcc: 0.607, time: 309.45, proposed: false },
+  { model: 'Proposed TinyFallNet (SE-ResCNN)', acc: 97.45, ba: 84.50, mf1: 74.0, fsen: 95.80, ffar: 0.518, ff1: 89.88, fAUC: 98.79, mcc: 0.726, time: 230.27, proposed: true },
+];
+
+function pct(v) { return v.toFixed(2) + '%'; }
+function fmt(v, d=3) { return v.toFixed(d); }
+
+const benchBody = document.getElementById('benchmarkBody');
+benchmarkData.forEach(r => {
+  const best = { acc: 98.32, ba: 84.98, mf1: 74.0, fsen: 96.53, ffar: 0.273, ff1: 89.88, fAUC: 99.83, mcc: 0.759 };
+  function hl(v, bv, lower=false) {
+    const isBest = lower ? v <= bv : v >= bv;
+    return isBest ? `<strong style="color:var(--accent2)">${v}</strong>` : v;
+  }
+  const tr = document.createElement('tr');
+  if (r.proposed) tr.className = 'proposed-row';
+  tr.innerHTML = `
+    <td>${r.model}</td>
+    <td>${hl(pct(r.acc), pct(best.acc))}</td>
+    <td>${hl(pct(r.ba), pct(best.ba))}</td>
+    <td>${hl(pct(r.mf1), pct(best.mf1))}</td>
+    <td>${hl(pct(r.fsen), pct(best.fsen))}</td>
+    <td>${hl(r.ffar.toFixed(3)+'%', best.ffar.toFixed(3)+'%', true)}</td>
+    <td>${hl(pct(r.ff1), pct(best.ff1))}</td>
+    <td>${hl(pct(r.fAUC), pct(best.fAUC))}</td>
+    <td>${hl(fmt(r.mcc), fmt(best.mcc))}</td>
+    <td>${r.time}s</td>
+  `;
+  benchBody.appendChild(tr);
+});
+
+/* ── Benchmark Charts ── */
+new Chart(document.getElementById('chartSenF1'), {
+  type: 'bar',
+  data: {
+    labels: MODEL_LABELS,
+    datasets: [
+      { label: 'Fall Sensitivity (%)', data: benchmarkData.map(r=>r.fsen), backgroundColor: MODEL_COLORS.map(c=>c+'cc') },
+      { label: 'Fall F1 Score (%)',    data: benchmarkData.map(r=>r.ff1),  backgroundColor: MODEL_COLORS.map(c=>c+'55') }
+    ]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+    scales: { y: { min: 60, max: 100, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } } }
+});
+
+new Chart(document.getElementById('chartMacroBA'), {
+  type: 'bar',
+  data: {
+    labels: MODEL_LABELS,
+    datasets: [
+      { label: 'Macro F1 (%)',        data: benchmarkData.map(r=>r.mf1), backgroundColor: MODEL_COLORS.map(c=>c+'cc') },
+      { label: 'Balanced Accuracy (%)',data: benchmarkData.map(r=>r.ba),  backgroundColor: MODEL_COLORS.map(c=>c+'55') }
+    ]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+    scales: { y: { min: 60, max: 100, ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } } }
+});
+
+/* ══════════════════ DATASET CHARTS ══════════════════ */
+new Chart(document.getElementById('chartClassDist'), {
+  type: 'doughnut',
+  data: {
+    labels: ['ADL (Class 0)', 'Pre-Fall (Class 1)', 'Fall (Class 2)'],
+    datasets: [{ data: [74937, 696, 2238], backgroundColor: ['#4e79a7','#f28e2b','#e15759'],
+      borderWidth: 2, borderColor: '#fff' }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+});
+
+new Chart(document.getElementById('chartSplit'), {
+  type: 'bar',
+  data: {
+    labels: ['Train', 'Validation', 'Test'],
+    datasets: [{ label: 'Samples', data: [77871, 20233, 18884],
+      backgroundColor: ['#4e79a7cc','#59a14fcc','#f28e2bcc'],
+      borderRadius: 6 }]
+  },
+  options: { responsive: true, indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 11 } } } } }
+});
+
+/* ══════════════════ HARDWARE DATA ══════════════════ */
+const hwData = [
+  { model: 'Random Forest',     params: '63,430', fp32: 1982.19, int8: 495.55, lat: 0.185, tput: 5405.0, ram: 45.0, feasibility: 'Requires Tree Array in Flash', proposed: false },
+  { model: 'HistGradientBoosting', params: '3,100', fp32: 36.5, int8: 12.2,   lat: 0.112, tput: 8928.0, ram: 2.4,  feasibility: 'YES (Tree Ensemble)', proposed: false },
+  { model: 'Standard 1D-CNN',   params: '44,899', fp32: 175.39, int8: 43.85, lat: 0.803, tput: 1245.8, ram: 8.56, feasibility: 'YES (Optimal for ESP32/STM32)', proposed: false },
+  { model: 'CNN-LSTM',          params: '46,947', fp32: 183.39, int8: 45.85, lat: 1.488, tput: 671.8,  ram: 8.95, feasibility: 'YES (Optimal for ESP32/STM32)', proposed: false },
+  { model: 'TinyFallNet ★',     params: '20,975', fp32: 81.93,  int8: 20.48, lat: 3.005, tput: 332.8,  ram: 4.0,  feasibility: 'YES (Optimal for ESP32/STM32)', proposed: true },
+];
+
+const hwBody = document.getElementById('hardwareBody');
+hwData.forEach(r => {
+  const tr = document.createElement('tr');
+  if (r.proposed) tr.className = 'proposed-row';
+  const feasPill = r.feasibility.startsWith('YES') ? `<span class="pill pill-green">${r.feasibility}</span>` :
+                   `<span class="pill pill-orange">${r.feasibility}</span>`;
+  tr.innerHTML = `
+    <td>${r.model}</td>
+    <td>${r.params}</td>
+    <td>${r.fp32.toFixed(2)}</td>
+    <td>${r.int8.toFixed(2)}</td>
+    <td>${r.lat}</td>
+    <td>${r.tput.toLocaleString()}</td>
+    <td>${r.ram}%</td>
+    <td>${feasPill}</td>
+  `;
+  hwBody.appendChild(tr);
+});
+
+new Chart(document.getElementById('chartPareto'), {
+  type: 'scatter',
+  data: {
+    datasets: hwData.map((r, i) => ({
+      label: r.model,
+      data: [{ x: r.int8, y: r.lat }],
+      backgroundColor: MODEL_COLORS[i] + 'cc',
+      borderColor: MODEL_COLORS[i],
+      pointRadius: i === 4 ? 14 : 9,
+      pointStyle: i === 4 ? 'star' : 'circle',
+    }))
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10 } } },
+    scales: {
+      x: { title: { display: true, text: 'INT8 Model Size (KB)', font: { size: 11 } }, ticks: { font: { size: 10 } } },
+      y: { title: { display: true, text: 'Latency (ms)', font: { size: 11 } }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('chartParams'), {
+  type: 'bar',
+  data: {
+    labels: MODEL_LABELS,
+    datasets: [{ label: 'Total Parameters', data: [63430, 3100, 44899, 46947, 20975],
+      backgroundColor: MODEL_COLORS.map(c=>c+'cc'), borderRadius: 6 }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } },
+    scales: { y: { ticks: { font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } } }
+});
+
+/* ══════════════════ ABLATION DATA ══════════════════ */
+const ablationData = [
+  { cfg: 'Standard Cross-Entropy (Unweighted)', acc: 98.50, ba: 77.34, mf1: 76.77, fsen: 91.41, ffar: 0.240, ff1: 91.66, mcc: 0.795, proposed: false },
+  { cfg: 'Weighted Cross-Entropy (Class-Balanced)', acc: 97.43, ba: 84.12, mf1: 73.56, fsen: 97.26, ffar: 0.687, ff1: 88.30, mcc: 0.725, proposed: false },
+  { cfg: 'Focal Loss (γ=1.0, Unweighted)',       acc: 98.49, ba: 72.01, mf1: 72.87, fsen: 92.50, ffar: 0.234, ff1: 92.34, mcc: 0.787, proposed: false },
+  { cfg: 'Focal Loss (γ=2.0, Unweighted)',       acc: 98.45, ba: 75.24, mf1: 75.09, fsen: 92.14, ffar: 0.273, ff1: 91.55, mcc: 0.786, proposed: false },
+  { cfg: 'CW Focal Loss (γ=1.0)',                acc: 97.34, ba: 83.83, mf1: 73.14, fsen: 95.80, ffar: 0.714, ff1: 87.19, mcc: 0.716, proposed: false },
+  { cfg: 'CW Focal Loss (γ=2.0) — Proposed',    acc: 96.29, ba: 86.22, mf1: 70.73, fsen: 97.81, ffar: 0.747, ff1: 87.78, mcc: 0.665, proposed: true },
+];
+
+const ablBody = document.getElementById('ablationBody');
+ablationData.forEach(r => {
+  const tr = document.createElement('tr');
+  if (r.proposed) tr.className = 'proposed-row';
+  tr.innerHTML = `
+    <td>${r.cfg}</td>
+    <td>${r.acc.toFixed(2)}%</td>
+    <td>${r.ba.toFixed(2)}%</td>
+    <td>${r.mf1.toFixed(2)}%</td>
+    <td>${r.fsen.toFixed(2)}%</td>
+    <td>${r.ffar.toFixed(3)}%</td>
+    <td>${r.ff1.toFixed(2)}%</td>
+    <td>${r.mcc.toFixed(3)}</td>
+  `;
+  ablBody.appendChild(tr);
+});
+
+new Chart(document.getElementById('chartAblation'), {
+  type: 'bar',
+  data: {
+    labels: ablationData.map(r => r.cfg.length > 35 ? r.cfg.substring(0,35)+'…' : r.cfg),
+    datasets: [
+      { label: 'Fall Sensitivity (%)', data: ablationData.map(r=>r.fsen), backgroundColor: '#1a56a0cc', yAxisID: 'y' },
+      { label: 'MCC',                  data: ablationData.map(r=>r.mcc*100), backgroundColor: '#0e8a5fcc', yAxisID: 'y' }
+    ]
+  },
+  options: { responsive: true,
+    plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } },
+    scales: {
+      y: { title: { display: true, text: '% / MCC×100', font: { size: 11 } }, ticks: { font: { size: 10 } } },
+      x: { ticks: { font: { size: 9 } } }
+    }
+  }
+});
+
+/* ══════════════════ THRESHOLD DATA ══════════════════ */
+const threshData = [
+  { tau:0.05,  sen:0.9817, spe:0.8723, pre:0.1865, f1:0.3135, far:0.12772, mcc:0.3984, tp:537, fp:2342, fn:10, tn:15995 },
+  { tau:0.10,  sen:0.9799, spe:0.9335, pre:0.3052, f1:0.4655, far:0.06653, mcc:0.5275, tp:536, fp:1220, fn:11, tn:17117 },
+  { tau:0.15,  sen:0.9799, spe:0.9643, pre:0.4500, f1:0.6168, far:0.03572, mcc:0.6514, tp:536, fp:655,  fn:11, tn:17682 },
+  { tau:0.20,  sen:0.9799, spe:0.9800, pre:0.5936, f1:0.7393, far:0.02001, mcc:0.7544, tp:536, fp:367,  fn:11, tn:17970 },
+  { tau:0.25,  sen:0.9781, spe:0.9858, pre:0.6730, f1:0.7973, far:0.01418, mcc:0.8050, tp:535, fp:260,  fn:12, tn:18077 },
+  { tau:0.30,  sen:0.9762, spe:0.9889, pre:0.7236, f1:0.8311, far:0.01113, mcc:0.8352, tp:534, fp:204,  fn:13, tn:18133 },
+  { tau:0.35,  sen:0.9707, spe:0.9910, pre:0.7629, f1:0.8544, far:0.00900, mcc:0.8561, tp:531, fp:165,  fn:16, tn:18172 },
+  { tau:0.40,  sen:0.9634, spe:0.9926, pre:0.7961, f1:0.8718, far:0.00736, mcc:0.8718, tp:527, fp:135,  fn:20, tn:18202 },
+  { tau:0.45,  sen:0.9616, spe:0.9941, pre:0.8283, f1:0.8900, far:0.00594, mcc:0.8891, tp:526, fp:109,  fn:21, tn:18228 },
+  { tau:0.50,  sen:0.9580, spe:0.9950, pre:0.8520, f1:0.9019, far:0.00496, mcc:0.9004, tp:524, fp:91,   fn:23, tn:18246 },
+  { tau:0.55,  sen:0.9525, spe:0.9957, pre:0.8698, f1:0.9092, far:0.00425, mcc:0.9074, tp:521, fp:78,   fn:26, tn:18259 },
+  { tau:0.60,  sen:0.9232, spe:0.9971, pre:0.9034, f1:0.9132, far:0.00294, mcc:0.9106, tp:505, fp:54,   fn:42, tn:18283 },
+  { tau:0.65,  sen:0.8995, spe:0.9979, pre:0.9266, f1:0.9128, far:0.00213, mcc:0.9103, tp:492, fp:39,   fn:55, tn:18298 },
+  { tau:0.70,  sen:0.8629, spe:0.9986, pre:0.9497, f1:0.9042, far:0.00136, mcc:0.9026, tp:472, fp:25,   fn:75, tn:18312 },
+  { tau:0.75,  sen:0.8135, spe:0.9990, pre:0.9591, f1:0.8803, far:0.00104, mcc:0.8802, tp:445, fp:19,   fn:102,tn:18318 },
+  { tau:0.80,  sen:0.7386, spe:0.9992, pre:0.9665, f1:0.8373, far:0.00076, mcc:0.8411, tp:404, fp:14,   fn:143,tn:18323 },
+  { tau:0.85,  sen:0.6325, spe:0.9995, pre:0.9719, f1:0.7663, far:0.00055, mcc:0.7794, tp:346, fp:10,   fn:201,tn:18327 },
+  { tau:0.90,  sen:0.3894, spe:0.9998, pre:0.9816, f1:0.5576, far:0.00022, mcc:0.6124, tp:213, fp:4,    fn:334,tn:18333 },
+  { tau:0.95,  sen:0.1024, spe:0.9999, pre:0.9825, f1:0.1854, far:0.00005, mcc:0.3128, tp:56,  fp:1,    fn:491,tn:18336 },
+];
+
+const threshBody = document.getElementById('thresholdBody');
+threshData.forEach(r => {
+  const isOptimal = r.tau === 0.25;
+  const isDefault = r.tau === 0.50;
+  const tr = document.createElement('tr');
+  if (isOptimal) tr.style.background = '#eaf3ff';
+  if (isDefault) tr.style.background = '#f0faf4';
+  tr.innerHTML = `
+    <td><strong>${r.tau.toFixed(2)}</strong>${isOptimal?' <span class="pill pill-blue">Optimal</span>':''}${isDefault?' <span class="pill pill-green">Default</span>':''}</td>
+    <td>${(r.sen*100).toFixed(2)}%</td>
+    <td>${(r.spe*100).toFixed(2)}%</td>
+    <td>${(r.pre*100).toFixed(2)}%</td>
+    <td>${(r.f1*100).toFixed(2)}%</td>
+    <td>${(r.far*100).toFixed(4)}%</td>
+    <td>${r.mcc.toFixed(4)}</td>
+    <td>${r.tp}</td><td>${r.fp}</td><td>${r.fn}</td><td>${r.tn}</td>
+  `;
+  threshBody.appendChild(tr);
+});
+
+new Chart(document.getElementById('chartThreshold'), {
+  type: 'line',
+  data: {
+    labels: threshData.map(r => r.tau.toFixed(2)),
+    datasets: [
+      { label: 'Sensitivity', data: threshData.map(r=>r.sen*100),
+        borderColor: '#c0392b', backgroundColor: '#c0392b22', tension: 0.3, fill: false, pointRadius: 3 },
+      { label: 'Specificity', data: threshData.map(r=>r.spe*100),
+        borderColor: '#1a56a0', backgroundColor: '#1a56a022', tension: 0.3, fill: false, pointRadius: 3 },
+      { label: 'F1 Score',    data: threshData.map(r=>r.f1*100),
+        borderColor: '#0e8a5f', backgroundColor: '#0e8a5f22', tension: 0.3, fill: false, pointRadius: 3 },
+      { label: 'FAR (×100%)',  data: threshData.map(r=>r.far*100),
+        borderColor: '#e67e22', backgroundColor: '#e67e2222', tension: 0.3, fill: false, pointRadius: 3, borderDash: [5,4] },
+      { label: 'MCC (×100)',  data: threshData.map(r=>r.mcc*100),
+        borderColor: '#8e44ad', backgroundColor: '#8e44ad22', tension: 0.3, fill: false, pointRadius: 3, borderDash: [3,3] },
+    ]
+  },
+  options: { responsive: true,
+    plugins: {
+      legend: { position: 'top', labels: { font: { size: 11 } } },
+      annotation: {}
+    },
+    scales: {
+      y: { min: 0, max: 105, title: { display: true, text: '%', font: { size: 11 } }, ticks: { font: { size: 10 } } },
+      x: { title: { display: true, text: 'Decision Threshold (τ)', font: { size: 11 } }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+/* ══════════════════ TRIAGE CHARTS ══════════════════ */
+new Chart(document.getElementById('chartTriage'), {
+  type: 'doughnut',
+  data: {
+    labels: ['STANDARD (Tier 3 — Green)', 'HIGH (Tier 2 — Yellow)', 'URGENT (Tier 1 — Red)'],
+    datasets: [{ data: [618, 1, 0],
+      backgroundColor: ['#27ae60','#f39c12','#e74c3c'],
+      borderWidth: 2, borderColor: '#fff' }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+});
+
+new Chart(document.getElementById('chartSeverity'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Mild (SI < 50)', 'Moderate (SI 50–80)', 'Severe (SI > 80)'],
+    datasets: [{ data: [618, 1, 0],
+      backgroundColor: ['#27ae60','#f39c12','#e74c3c'],
+      borderWidth: 2, borderColor: '#fff' }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+});
+
+/* ── Nav active highlighting on scroll ── */
+const sections = document.querySelectorAll('section[id]');
+const navLinks  = document.querySelectorAll('nav a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 80) current = s.getAttribute('id'); });
+  navLinks.forEach(a => {
+    a.classList.remove('active');
+    if (a.getAttribute('href') === '#' + current) a.classList.add('active');
+  });
+}, { passive: true });
+</script>
+</body>
+</html>

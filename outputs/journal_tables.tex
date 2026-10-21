@@ -1,0 +1,62 @@
+% ==========================================================================
+% TABLE 1: MODEL BENCHMARK COMPARISON TABLE (IEEE / ELSEVIER FORMAT)
+% ==========================================================================
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Model & Accuracy & Balanced_Accuracy & Macro_Precision & Macro_Recall_Sensitivity & Macro_Specificity & Macro_F1 & Matthews_Corr_Coef_MCC & Macro_ROC_AUC \\
+\midrule
+Random Forest (Handcrafted) & 0.9622 & 0.8494 & 0.6361 & 0.8494 & 0.9544 & 0.6967 & 0.6540 & 0.9724 \\
+HistGradientBoosting & 0.9832 & 0.6966 & 0.7306 & 0.6966 & 0.9105 & 0.7118 & 0.7587 & 0.9794 \\
+Standard 1D-CNN & 0.9717 & 0.8498 & 0.6758 & 0.8498 & 0.9576 & 0.7292 & 0.7061 & 0.9819 \\
+CNN-LSTM & 0.9524 & 0.8367 & 0.6071 & 0.8367 & 0.9525 & 0.6662 & 0.6068 & 0.9794 \\
+Proposed TinyFallNet (SE-ResCNN) & 0.9745 & 0.8450 & 0.6913 & 0.8450 & 0.9577 & 0.7399 & 0.7257 & 0.9663 \\
+\bottomrule
+\end{tabular}
+
+
+% ==========================================================================
+% TABLE 2: TINYML HARDWARE PROFILING & EMBEDDED FOOTPRINT
+% ==========================================================================
+\begin{tabular}{lrrrrrr}
+\toprule
+Model & Total_Parameters & FP32_Model_Size_KB & INT8_Quantized_Size_KB & Mean_Inference_Latency_ms & Throughput_Inferences_Per_Sec & Estimated_MCU_RAM_Util_Pct \\
+\midrule
+Random Forest (Handcrafted) & 63430 & 1982.19 & 495.55 & 0.18 & 5405.00 & 45.00 \\
+HistGradientBoosting & 3100 & 36.50 & 12.20 & 0.11 & 8928.00 & 2.40 \\
+Standard 1D-CNN & 44899 & 175.39 & 43.85 & 0.80 & 1245.80 & 8.56 \\
+CNN-LSTM & 46947 & 183.39 & 45.85 & 1.49 & 671.80 & 8.95 \\
+Proposed TinyFallNet (SE-ResCNN) & 20975 & 81.93 & 20.48 & 3.00 & 332.80 & 4.00 \\
+\bottomrule
+\end{tabular}
+
+
+% ==========================================================================
+% TABLE 3: PER-CLASS BREAKDOWN FOR PROPOSED TINYFALLNET
+% ==========================================================================
+\begin{tabular}{rlrrrrrrrrrrrrrrrr}
+\toprule
+class_idx & class_name & support & TP & FP & TN & FN & sensitivity_recall & specificity & precision & npv & f1_score & fpr_false_alarm_rate & fnr_miss_rate & g_mean & dor & roc_auc_ovr & pr_auc_ovr \\
+\midrule
+0 & Class 0: ADL & 18180 & 17785 & 74 & 630 & 395 & 0.9783 & 0.8949 & 0.9959 & 0.6146 & 0.9870 & 0.1051 & 0.0217 & 0.9357 & 383.3236 & 0.9870 & 0.9994 \\
+1 & Class 1: Pre-Fall/Alert & 157 & 94 & 312 & 18415 & 63 & 0.5987 & 0.9833 & 0.2315 & 0.9966 & 0.3339 & 0.0167 & 0.4013 & 0.7673 & 88.0652 & 0.9241 & 0.2261 \\
+2 & Class 2: Fall & 547 & 524 & 95 & 18242 & 23 & 0.9580 & 0.9948 & 0.8465 & 0.9987 & 0.8988 & 0.0052 & 0.0420 & 0.9762 & 4374.7405 & 0.9879 & 0.9521 \\
+\bottomrule
+\end{tabular}
+
+
+% ==========================================================================
+% TABLE 4: LOSS FUNCTION ABLATION STUDY
+% ==========================================================================
+\begin{tabular}{lrrrrrr}
+\toprule
+Loss_Configuration & Accuracy & Macro_F1 & Fall_Class_Sensitivity & Fall_Class_Precision & Fall_Class_F1 & Matthews_Corr_Coef_MCC \\
+\midrule
+Standard Cross-Entropy (Unweighted) & 0.9850 & 0.7677 & 0.9141 & 0.9191 & 0.9166 & 0.7945 \\
+Weighted Cross-Entropy (Class-Balanced) & 0.9743 & 0.7356 & 0.9726 & 0.8085 & 0.8830 & 0.7248 \\
+Focal Loss (gamma=1.0, Unweighted) & 0.9849 & 0.7287 & 0.9250 & 0.9217 & 0.9234 & 0.7867 \\
+Focal Loss (gamma=2.0, Unweighted) & 0.9845 & 0.7509 & 0.9214 & 0.9097 & 0.9155 & 0.7862 \\
+Class-Weighted Focal Loss (gamma=1.0) & 0.9734 & 0.7314 & 0.9580 & 0.8000 & 0.8719 & 0.7163 \\
+Class-Weighted Focal Loss (gamma=2.0 - Proposed) & 0.9629 & 0.7073 & 0.9781 & 0.7961 & 0.8778 & 0.6655 \\
+\bottomrule
+\end{tabular}
+

@@ -1,0 +1,39 @@
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Dataset archives and raw large binary dataset files
+archive.zip
+archive/
+*.zip
+*.tar.gz
+*.bin
+*.npy
+
+# Temporary, backup, and draft word documents
+*_BACKUP.docx
+*_ORIGINAL_BACKUP.docx
+*_PRE_PURGE_BACKUP.docx
+*_UPDATED.docx
+dashboard_BACKUP.html
+rev2.docx
+Review1_Report_Merged.docx
+Review3_Unified_Master_Report.docx
+
+# Large PDF files
+*.pdf
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
