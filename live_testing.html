@@ -1026,8 +1026,29 @@
       }
     }
 
+    // Backend Live Server Bridge
+    let isBackendActive = false;
+
+    async function checkBackendStatus() {
+      try {
+        const res = await fetch('/api/health');
+        if (res.ok) {
+          const data = await res.json();
+          isBackendActive = true;
+          const badge = document.getElementById('badge_status');
+          if (badge) {
+            badge.className = 'pill pill-purple';
+            badge.innerText = '⚡ Live PyTorch Server Connected';
+          }
+        }
+      } catch (e) {
+        isBackendActive = false;
+      }
+    }
+
     // Initialize on page load
     window.addEventListener('DOMContentLoaded', () => {
+      checkBackendStatus();
       applyPreset('adl_walk');
     });
   </script>
